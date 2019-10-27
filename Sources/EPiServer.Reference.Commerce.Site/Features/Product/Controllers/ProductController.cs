@@ -1,6 +1,4 @@
 ﻿using EPiServer.Commerce.Catalog.Linking;
-using EPiServer.Core;
-using EPiServer.Framework.Cache;
 using EPiServer.Reference.Commerce.Site.Features.Product.Models;
 using EPiServer.Reference.Commerce.Site.Features.Product.ViewModelFactories;
 using EPiServer.Reference.Commerce.Site.Infrastructure.Facades;
@@ -8,7 +6,6 @@ using EPiServer.Web.Mvc;
 using Mediachase.Commerce.Catalog;
 using Mediachase.Commerce.Core;
 using Mediachase.Commerce.Pricing;
-using Mediachase.Commerce.Pricing.Database;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -21,13 +18,24 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.Controllers
     {
         private readonly bool _isInEditMode;
         private readonly CatalogEntryViewModelFactory _viewModelFactory;
-
+        private readonly IContentLoader _contentLoader;
+        private readonly IPriceService _priceService;
+        private readonly IRelationRepository _relationRepository;
+        private readonly ReferenceConverter _referenceConverter;
 
         public ProductController(IsInEditModeAccessor isInEditModeAccessor,
-            CatalogEntryViewModelFactory viewModelFactory)
+            CatalogEntryViewModelFactory viewModelFactory,
+            IContentLoader contentLoader,
+            IPriceService priceService,
+            IRelationRepository relationRepository,
+            ReferenceConverter referenceConverter)
         {
             _isInEditMode = isInEditModeAccessor();
             _viewModelFactory = viewModelFactory;
+            _contentLoader = contentLoader;
+            _priceService = priceService;
+            _relationRepository = relationRepository;
+            _referenceConverter = referenceConverter;
         }
 
         [HttpGet]
@@ -46,24 +54,18 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.Controllers
 
             //--------------------------------------------
             //Start to review 
-
-            var contentLoader = ServiceLocation.ServiceLocator.Current.GetInstance<IContentLoader>();
-            var priceService = ServiceLocation.ServiceLocator.Current.GetInstance<PriceServiceDatabase>();
-            var relationRepository = ServiceLocation.ServiceLocator.Current.GetInstance<IRelationRepository>();
-            var referenceConverter = ServiceLocation.ServiceLocator.Current.GetInstance<ReferenceConverter>();
-
-            var variantLinks = relationRepository.GetChildren<ProductVariation>(currentContent.ContentLink);
+            var variantLinks = _relationRepository.GetChildren<ProductVariation>(currentContent.ContentLink);
             var variantCodes = new List<string>();
             foreach (var variantLink in variantLinks)
             {
-                var variant = contentLoader.Get<FashionVariant>(variantLink.Child);
+                var variant = _contentLoader.Get<FashionVariant>(variantLink.Child);
                 variantCodes.Add(variant.Code);
             }
 
             var allPrices = new List<IPriceValue>();
             foreach (var code in variantCodes)
             {
-                var prices = priceService.GetCatalogEntryPrices(new CatalogKey(code));
+                var prices = _priceService.GetCatalogEntryPrices(new CatalogKey(code));
                 allPrices.AddRange(prices);
             }
 
@@ -76,7 +78,7 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.Controllers
             stopWatch.Stop();
             var viewModel = _viewModelFactory.Create(currentContent, entryCode);
             viewModel.TimeSpent = $"Time spent {stopWatch.ElapsedMilliseconds} ms";
-            viewModel.PriceRange = $"{lowestPrice.UnitPrice.ToString()} - {highestPrice.UnitPrice.ToString()}";
+            viewModel.PriceRange = $"{lowestPrice.UnitPrice.ToString()} - ${highestPrice.UnitPrice.ToString()}";
             viewModel.SkipTracking = skipTracking;
 
             if (_isInEditMode && viewModel.Variant == null)

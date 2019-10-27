@@ -12,6 +12,8 @@ using System.Web.Mvc;
 using System.Web.Routing;
 using EPiServer.Tracking.Commerce.Data;
 using Xunit;
+using EPiServer.Commerce.Catalog.Linking;
+using Mediachase.Commerce.Pricing;
 
 namespace EPiServer.Reference.Commerce.Site.Tests.Features.Product.Controllers
 {
@@ -118,7 +120,11 @@ namespace EPiServer.Reference.Commerce.Site.Tests.Features.Product.Controllers
 
         private ProductController CreateController()
         {
-            var controller = new ProductController(() => _isInEditMode, _viewModelFactoryMock.Object);
+            var controller = new ProductController(() => _isInEditMode, _viewModelFactoryMock.Object,
+                new Mock<IContentLoader>().Object,
+                new Mock<IPriceService>().Object,
+                new Mock<IRelationRepository>().Object,
+                _referenceConverterMock.Object);
             controller.ControllerContext = new ControllerContext(_httpContextBaseMock.Object, new RouteData(), controller);
 
             return controller;
