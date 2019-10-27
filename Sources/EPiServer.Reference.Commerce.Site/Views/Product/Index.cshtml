@@ -1,7 +1,6 @@
 ﻿@model EPiServer.Reference.Commerce.Site.Features.Product.ViewModels.FashionProductViewModel
 
 <div class="row jsProductDetails">
-
     <div class="col-xs-12 col-sm-4 col--leading">
         <div id="product-carousel" class="carousel slide" data-ride="carousel">
             <div class="carousel-inner" role="listbox">
@@ -29,6 +28,8 @@
         <div class="row">
             <div class="col-xs-12">
                 <h1>@Html.PropertyFor(x => x.Product.DisplayName)</h1>
+                <h2>@Html.PropertyFor(x => x.TimeSpent)</h2>
+                <h2>@Html.PropertyFor(x => x.PriceRange)</h2>
             </div>
             <div class="col-xs-12 col-sm-6">
                 <h2 class="product-brand">@Html.PropertyFor(x => x.Product.Brand)</h2>
@@ -127,7 +128,7 @@
 @if (Functions.ShouldRenderTrackingSection() && !Model.SkipTracking)
 {
     @section Tracking{
-    <script>
+        <script>
         $(document).ready(function () {
             var refCode = '@Model.Product.Code';
             var productName = '@Model.Product.Name';
@@ -140,6 +141,6 @@
 
             epiRecommendations.track(productTrackingData, null, 'web', Recommendations.render, { sectionMappings: [{ area: "productAlternativesWidget", selector: ".recommendations-right", numberOfItemsToRender: 3 }, { area: "productCrossSellsWidget", selector: ".recommendations-bottom" }] })
         });
-    </script>
+        </script>
     }
 }

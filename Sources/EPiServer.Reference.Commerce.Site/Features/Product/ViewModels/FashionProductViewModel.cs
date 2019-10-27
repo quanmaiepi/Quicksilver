@@ -17,5 +17,8 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.ViewModels
         public string Color { get; set; }
         public string Size { get; set; }
         public bool IsAvailable { get; set; }
+        public string TimeSpent { get; set; }
+        public string PriceRange { get; set; }
+
     }
 }
