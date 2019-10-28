@@ -1,4 +1,5 @@
 ﻿using EPiServer.Commerce.Catalog.Linking;
+using EPiServer.Core;
 using EPiServer.Reference.Commerce.Site.Features.Product.Models;
 using EPiServer.Reference.Commerce.Site.Features.Product.ViewModelFactories;
 using EPiServer.Reference.Commerce.Site.Infrastructure.Facades;
@@ -6,7 +7,6 @@ using EPiServer.Web.Mvc;
 using Mediachase.Commerce.Catalog;
 using Mediachase.Commerce.Core;
 using Mediachase.Commerce.Pricing;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Web;
@@ -55,19 +55,9 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.Controllers
             //--------------------------------------------
             //Start to review 
             var variantLinks = _relationRepository.GetChildren<ProductVariation>(currentContent.ContentLink);
-            var variantCodes = new List<string>();
-            foreach (var variantLink in variantLinks)
-            {
-                var variant = _contentLoader.Get<FashionVariant>(variantLink.Child);
-                variantCodes.Add(variant.Code);
-            }
+            var variantCodes = variantLinks.Select(x => _referenceConverter.GetCode(x.Child));
 
-            var allPrices = new List<IPriceValue>();
-            foreach (var code in variantCodes)
-            {
-                var prices = _priceService.GetCatalogEntryPrices(new CatalogKey(code));
-                allPrices.AddRange(prices);
-            }
+            var allPrices = _priceService.GetCatalogEntryPrices(variantCodes.Select(x => new CatalogKey(x)));
 
             var lowestPrice = allPrices.Where(x => x.UnitPrice.Currency == currency).OrderBy(x => x.UnitPrice).First();
             var highestPrice = allPrices.Where(x => x.UnitPrice.Currency == currency).OrderByDescending(x => x.UnitPrice).First();
@@ -78,7 +68,7 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.Controllers
             stopWatch.Stop();
             var viewModel = _viewModelFactory.Create(currentContent, entryCode);
             viewModel.TimeSpent = $"Time spent {stopWatch.ElapsedMilliseconds} ms";
-            viewModel.PriceRange = $"{lowestPrice.UnitPrice.ToString()} - ${highestPrice.UnitPrice.ToString()}";
+            viewModel.PriceRange = $"{lowestPrice.UnitPrice.ToString()} - {highestPrice.UnitPrice.ToString()}";
             viewModel.SkipTracking = skipTracking;
 
             if (_isInEditMode && viewModel.Variant == null)
