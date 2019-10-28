@@ -57,10 +57,11 @@ namespace EPiServer.Reference.Commerce.Site.Features.Product.Controllers
             var variantLinks = _relationRepository.GetChildren<ProductVariation>(currentContent.ContentLink);
             var variantCodes = variantLinks.Select(x => _referenceConverter.GetCode(x.Child));
 
-            var allPrices = _priceService.GetCatalogEntryPrices(variantCodes.Select(x => new CatalogKey(x)));
+            var allPrices = _priceService.GetCatalogEntryPrices(variantCodes.Select(x => new CatalogKey(x)))
+                .Where(x => x.UnitPrice.Currency == currency).OrderBy(x => x.UnitPrice);
 
-            var lowestPrice = allPrices.Where(x => x.UnitPrice.Currency == currency).OrderBy(x => x.UnitPrice).First();
-            var highestPrice = allPrices.Where(x => x.UnitPrice.Currency == currency).OrderByDescending(x => x.UnitPrice).First();
+            var lowestPrice = allPrices.First();
+            var highestPrice = allPrices.Last();
 
             //----------------------------------------------
             //End review
